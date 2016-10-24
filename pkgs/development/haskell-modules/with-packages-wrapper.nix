@@ -2,6 +2,7 @@
 , ignoreCollisions ? false, withLLVM ? false
 , postBuild ? ""
 , haskellPackages
+, ghcLibdir ? null
 }:
 
 # This wrapper works only with GHC 6.12 or later.
@@ -44,11 +45,19 @@ let
   llvm          = lib.makeBinPath
                   ([ llvmPackages.llvm ]
                    ++ lib.optional stdenv.isDarwin llvmPackages.clang);
+  ghcLibdirLink = stdenv.mkDerivation {
+    name = "ghc_libdir";
+    inherit ghcLibdir;
+    buildCommand = ''
+      mkdir -p ${libDir}
+      echo "$ghcLibdir" > ${libDir}/ghc_libdir_override
+    '';
+  };
 in
 if paths == [] && !withLLVM then ghc else
 buildEnv {
   inherit (ghc) name;
-  paths = paths ++ [ghc];
+  paths = paths ++ [ghc] ++ lib.optional isGhcjs ghcLibdirLink;
   inherit ignoreCollisions;
   postBuild = ''
     . ${makeWrapper}/nix-support/setup-hook
@@ -93,6 +102,7 @@ buildEnv {
     done
 
     ${lib.optionalString hasLibraries "$out/bin/${ghcCommand}-pkg recache"}
+    ${lib.optionalString (isGhcjs && ghcLibdir != null) "mv ${libDir}/ghc_libdir_override ${libDir}/ghc_libdir"}
     $out/bin/${ghcCommand}-pkg check
   '' + postBuild;
   passthru = {

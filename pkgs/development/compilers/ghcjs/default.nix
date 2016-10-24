@@ -1,4 +1,5 @@
 { mkDerivation
+, haskellPackages
 , test-framework
 , test-framework-hunit
 , test-framework-quickcheck2
@@ -49,10 +50,12 @@
     src = ghcjsBootSrc;
   }
 , shims ? import ./shims.nix { inherit fetchFromGitHub; }
+
+, ghcLibdir ? null
 }:
 let
   inherit (bootPkgs) ghc;
-  version = "0.2.0";
+  version = "0.2.1";
 
 in mkDerivation (rec {
   pname = "ghcjs";
@@ -126,6 +129,7 @@ in mkDerivation (rec {
         --with-cabal ${cabal-install}/bin/cabal \
         --with-gmp-includes ${gmp.dev}/include \
         --with-gmp-libraries ${gmp.out}/lib
+    ${if ghcLibdir == null then "" else ''echo "${ghcLibdir}" >$out/lib/ghcjs-${version}/ghc_libdir''}
   '';
   passthru = let
     ghcjsNodePkgs = pkgs.nodePackages.override {
@@ -138,6 +142,7 @@ in mkDerivation (rec {
     isGhcjs = true;
     inherit nodejs ghcjsBoot;
     inherit (ghcjsNodePkgs) "socket.io";
+    ghcPackages = haskellPackages;
 
     # This is the list of the Stage 1 packages that are built into a booted ghcjs installation
     # It can be generated with the command:
