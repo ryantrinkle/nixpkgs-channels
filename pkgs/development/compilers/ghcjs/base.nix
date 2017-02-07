@@ -88,6 +88,8 @@
   ]
 
 , stage2 ? import ./stage2.nix
+
+, ghcLibdir ? null
 }:
 let
   inherit (bootPkgs) ghc;
@@ -159,6 +161,7 @@ in mkDerivation (rec {
         --with-cabal ${cabal-install}/bin/cabal \
         --with-gmp-includes ${gmp.dev}/include \
         --with-gmp-libraries ${gmp.out}/lib
+    ${if ghcLibdir == null then "" else ''echo "${ghcLibdir}" >$out/lib/ghcjs-${version}/ghc_libdir''}
   '';
   passthru = let
     ghcjsNodePkgs = callPackage ../../../top-level/node-packages.nix {
