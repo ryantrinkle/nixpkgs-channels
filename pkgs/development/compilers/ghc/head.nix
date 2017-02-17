@@ -97,7 +97,7 @@ in stdenv.mkDerivation (rec {
     "RANLIB=${stdenv.binutilsCross}/bin/${cross.config}-ranlib"
     "--target=${cross.config}"
     "--enable-bootstrap-with-devel-snapshot"
-  ];
+  ] ++ (if "${cross.config}" == "aarch64-apple-darwin14" then [ "--disable-large-address-space" ] else []);
 
   buildInputs = commonBuildInputs ++ [ stdenv.ccCross stdenv.binutilsCross ];
 
